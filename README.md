@@ -72,7 +72,7 @@ fill_mask = pipeline("fill-mask", model=model, tokenizer=tokenizer)
 outputs = fill_mask(CODE)
 ```
 
-Indeed the model will predict the token **i** with the highest score for **CODE = "i(<mask>"**:  
+Indeed the model will predict the token **i** with the highest score for **CODE = "i(< mask >"**:  
 >outputs = [  
 >  &nbsp; &nbsp;{'score': 0.22026327252388,'token': 118, 'token_str': 'i', 'sequence': 'i(i'},  
 >  &nbsp; &nbsp;{'score': 0.027704259380698204,'token': 4839, 'token_str': ' )', 'sequence': 'i( )'},  
