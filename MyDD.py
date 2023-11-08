@@ -87,11 +87,6 @@ if __name__ == "__main__":
     print("Simplifying prediction-preserving input...")
     g_all_data.append("\nTrace of simplified code(s):")
     c = mydd.ddmin(deltas)
-    """
-    c = delta_debugging(
-        deltas, g_model, hp.prediction_with_M(g_model, "")
-    )  # Invoke DDMIN
-    """
     print("The 1-minimal prediction-preserving input is", c)
     print("Removing any element will make the prediction go away.")
     program = hp.deltas_to_code(c)
