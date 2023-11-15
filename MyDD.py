@@ -91,4 +91,4 @@ if __name__ == "__main__":
     print("Removing any element will make the prediction go away.")
     program = hp.deltas_to_code(c)
     g_all_data.append("\nMinimal simplified code:\n{}".format(program))
-    print(g_predicted_method_name)
+    print(program)
