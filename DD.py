@@ -715,7 +715,7 @@ class DD:
                     return c
 
                 next_n = min(len(c), n * 2)
-                print("dd: increase granularity to", next_n)
+                # print("dd: increase granularity to", next_n)
                 cbar_offset = (cbar_offset * next_n) / n
 
             c = next_c
