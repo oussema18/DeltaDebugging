@@ -246,4 +246,4 @@ if __name__ == "__main__":
                 print("-----------------------------------------------------------")
                 # print("Removing any element will make the prediction go away.")
                 g_all_data.append("\nMinimal simplified code:\n{}".format(program))
-        i = i + 1
+            i = i + 1
