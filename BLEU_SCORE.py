@@ -179,7 +179,7 @@ if __name__ == "__main__":
     g_model = hp.load_model_M()
     assert g_model is not None
     # Read the JSONL file
-    jsonl_file_path = "Delta Debugging/python_test_0.jsonl"
+    jsonl_file_path = "python_test_0.jsonl"
     i = 0
     remaining_tokens = {}
     deleted_tokens = {}
