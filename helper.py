@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 from dd_model import Model
 from config import Config
 from transformers import RobertaConfig, RobertaTokenizer, RobertaForMaskedLM, pipeline
+from transformers import RobertaTokenizer, T5ForConditionalGeneration
 
 ###############################################################
 
@@ -81,17 +82,18 @@ def get_json_data(time, score, loss, code, tokens=None, n_pass=None):
 
 
 def load_model_M(model_path=""):
-    model = RobertaForMaskedLM.from_pretrained("microsoft/codebert-base-mlm")
+    model = T5ForConditionalGeneration.from_pretrained(
+        "Salesforce/codet5-base-multi-sum"
+    )
     return model
 
 
 def prediction_with_M(model, code):
-    pred, score, loss = None, None, 0
-    tokenizer = RobertaTokenizer.from_pretrained("microsoft/codebert-base-mlm")
-    fill_mask = pipeline("fill-mask", model=model, tokenizer=tokenizer)
-    predictions = fill_mask(code)
-    pred, score = find_max_score_token(predictions)
-    print(pred)
+    pred, score, loss = None, 0, 0
+    tokenizer = RobertaTokenizer.from_pretrained("Salesforce/codet5-base")
+    input_ids = tokenizer(code, return_tensors="pt").input_ids
+    generated_ids = model.generate(input_ids, max_length=20)
+    pred = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
     return pred, score, loss
 
 
