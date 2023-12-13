@@ -305,7 +305,7 @@ class DD:
                 return self.FAIL
 
         if self.debug_test:
-            print()
+            # print()
             print("test(" + self.coerce(c) + ")...")
 
         # c [(0, 'for'), (1, ' '), (2, 'i'), (3, ' '), (4, '<'), (5, 'mask'), (6, '>'), (7, ' ')]
@@ -438,8 +438,8 @@ class DD:
     # Logging
     def report_progress(self, c, title):
         if len(c) != self.__last_reported_length:
-            print()
-            print(title + ": " + repr(len(c)) + " deltas left:", self.coerce(c))
+            # print()
+            # print(title + ": " + repr(len(c)) + " deltas left:", self.coerce(c))
             self.__last_reported_length = len(c)
 
     # Delta Debugging (old ESEC/FSE version)
@@ -493,7 +493,7 @@ class DD:
             self.report_progress(c, "dd")
 
             cs = self.split(c, n)
-
+            """
             print()
             print("dd (run #" + repr(run) + "): trying", end=" ")
             for i in range(n):
@@ -501,7 +501,7 @@ class DD:
                     print("+", end=" ")
                 print(len(cs[i]), end=" ")
             print()
-
+            """
             # Check subsets
             ts = []
             for i in range(n):
@@ -646,7 +646,7 @@ class DD:
                 self.report_progress(c, "dd")
 
                 cs = self.split(c, n)
-
+                """
                 print()
                 print("dd (run #" + repr(run) + "): trying", end=" ")
                 for i in range(n):
@@ -654,7 +654,7 @@ class DD:
                         print("+", end=" ")
                     print(len(cs[i]), end=" ")
                 print()
-
+                """
                 c_failed = 0
                 cbar_failed = 0
 
@@ -782,7 +782,7 @@ class DD:
             self.report_progress(c, "dd")
 
             cs = self.split(c, n)
-
+            """
             print()
             print("dd (run #" + repr(run) + "): trying", end=" ")
             for i in range(n):
@@ -790,7 +790,7 @@ class DD:
                     print("+", end=" ")
                 print(len(cs[i]), end=" ")
             print()
-
+            """
             progress = 0
 
             next_c1 = c1[:]
@@ -944,7 +944,7 @@ if __name__ == "__main__":
     c = mydd.ddmin([1, 2, 3, 4, 5, 6, 7, 8])  # Invoke DDMIN
     print("The 1-minimal failure-inducing input is", c)
     print("Removing any element will make the failure go away.")
-    print()
+    # print()
 
     print("Computing the failure-inducing difference...")
     (c, c1, c2) = mydd.dd([1, 2, 3, 4, 5, 6, 7, 8])  # Invoke DD

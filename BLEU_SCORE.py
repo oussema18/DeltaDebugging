@@ -190,6 +190,11 @@ if __name__ == "__main__":
             line = file.readline()
             for line in file:
                 if i >= 178:
+                    print(
+                        "======================Function execution i = ",
+                        i,
+                        "======================",
+                    )
                     # Parse the JSON data in each line
                     data = json.loads(line)
                     # Extract the code from the desired
