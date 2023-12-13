@@ -189,7 +189,7 @@ if __name__ == "__main__":
             # Iterate over each line in the file
             line = file.readline()
             for line in file:
-                if i >= 193:
+                if i >= 180:
                     print(
                         "======================Function execution i = ",
                         i,
