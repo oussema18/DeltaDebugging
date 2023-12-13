@@ -40,6 +40,8 @@
 #
 # Andreas Zeller
 
+import tensorflow as tf
+
 
 # Start with some helpers.
 class OutcomeCache:
@@ -624,103 +626,104 @@ class DD:
         return outcome
 
     def _dd(self, c, n):
-        """Stub to overload in subclasses"""
+        with tf.device("/device:GPU:0"):
+            """Stub to overload in subclasses"""
 
-        assert self.test([]) == self.PASS
+            assert self.test([]) == self.PASS
 
-        run = 1
-        cbar_offset = 0
+            run = 1
+            cbar_offset = 0
 
-        # We replace the tail recursion from the paper by a loop
-        while 1:
-            tc = self.test(c)
+            # We replace the tail recursion from the paper by a loop
+            while 1:
+                tc = self.test(c)
 
-            if n > len(c):
-                # No further minimizing
-                print("dd: done")
-                return c
-
-            self.report_progress(c, "dd")
-
-            cs = self.split(c, n)
-
-            print()
-            print("dd (run #" + repr(run) + "): trying", end=" ")
-            for i in range(n):
-                if i > 0:
-                    print("+", end=" ")
-                print(len(cs[i]), end=" ")
-            print()
-
-            c_failed = 0
-            cbar_failed = 0
-
-            next_c = c[:]
-            next_n = n
-
-            # Check subsets
-            for i in range(n):
-                if self.debug_dd:
-                    print("dd: trying", self.pretty(cs[i]))
-
-                (t, cs[i]) = self.test_mix(cs[i], c, self.REMOVE)
-
-                if t == self.FAIL:
-                    # Found
-                    if self.debug_dd:
-                        print("dd: found", len(cs[i]), "deltas:", end=" ")
-                        print(self.pretty(cs[i]))
-
-                    c_failed = 1
-                    next_c = cs[i]
-                    next_n = 2
-                    cbar_offset = 0
-                    self.report_progress(next_c, "dd")
-                    break
-
-            if not c_failed:
-                # Check complements
-                cbars = n * [self.UNRESOLVED]
-
-                # print("cbar_offset =", cbar_offset)
-
-                for j in range(n):
-                    i = (j + int(cbar_offset)) % n
-                    cbars[i] = self.__listminus(c, cs[i])
-                    t, cbars[i] = self.test_mix(cbars[i], c, self.ADD)
-
-                    doubled = self.__listintersect(cbars[i], cs[i])
-                    if doubled != []:
-                        cs[i] = self.__listminus(cs[i], doubled)
-
-                    if t == self.FAIL:
-                        if self.debug_dd:
-                            print("dd: reduced to", len(cbars[i]), end=" ")
-                            print("deltas:", end=" ")
-                            print(self.pretty(cbars[i]))
-
-                        cbar_failed = 1
-                        next_c = self.__listintersect(next_c, cbars[i])
-                        next_n = next_n - 1
-                        self.report_progress(next_c, "dd")
-
-                        # In next run, start removing the following subset
-                        cbar_offset = i
-                        break
-
-            if not c_failed and not cbar_failed:
-                if n >= len(c):
+                if n > len(c):
                     # No further minimizing
                     print("dd: done")
                     return c
 
-                next_n = min(len(c), n * 2)
-                # print("dd: increase granularity to", next_n)
-                cbar_offset = (cbar_offset * next_n) / n
+                self.report_progress(c, "dd")
 
-            c = next_c
-            n = next_n
-            run = run + 1
+                cs = self.split(c, n)
+
+                print()
+                print("dd (run #" + repr(run) + "): trying", end=" ")
+                for i in range(n):
+                    if i > 0:
+                        print("+", end=" ")
+                    print(len(cs[i]), end=" ")
+                print()
+
+                c_failed = 0
+                cbar_failed = 0
+
+                next_c = c[:]
+                next_n = n
+
+                # Check subsets
+                for i in range(n):
+                    if self.debug_dd:
+                        print("dd: trying", self.pretty(cs[i]))
+
+                    (t, cs[i]) = self.test_mix(cs[i], c, self.REMOVE)
+
+                    if t == self.FAIL:
+                        # Found
+                        if self.debug_dd:
+                            print("dd: found", len(cs[i]), "deltas:", end=" ")
+                            print(self.pretty(cs[i]))
+
+                        c_failed = 1
+                        next_c = cs[i]
+                        next_n = 2
+                        cbar_offset = 0
+                        self.report_progress(next_c, "dd")
+                        break
+
+                if not c_failed:
+                    # Check complements
+                    cbars = n * [self.UNRESOLVED]
+
+                    # print("cbar_offset =", cbar_offset)
+
+                    for j in range(n):
+                        i = (j + int(cbar_offset)) % n
+                        cbars[i] = self.__listminus(c, cs[i])
+                        t, cbars[i] = self.test_mix(cbars[i], c, self.ADD)
+
+                        doubled = self.__listintersect(cbars[i], cs[i])
+                        if doubled != []:
+                            cs[i] = self.__listminus(cs[i], doubled)
+
+                        if t == self.FAIL:
+                            if self.debug_dd:
+                                print("dd: reduced to", len(cbars[i]), end=" ")
+                                print("deltas:", end=" ")
+                                print(self.pretty(cbars[i]))
+
+                            cbar_failed = 1
+                            next_c = self.__listintersect(next_c, cbars[i])
+                            next_n = next_n - 1
+                            self.report_progress(next_c, "dd")
+
+                            # In next run, start removing the following subset
+                            cbar_offset = i
+                            break
+
+                if not c_failed and not cbar_failed:
+                    if n >= len(c):
+                        # No further minimizing
+                        print("dd: done")
+                        return c
+
+                    next_n = min(len(c), n * 2)
+                    # print("dd: increase granularity to", next_n)
+                    cbar_offset = (cbar_offset * next_n) / n
+
+                c = next_c
+                n = next_n
+                run = run + 1
 
     def ddmin(self, c):
         return self.ddgen(c, 1, 0)
