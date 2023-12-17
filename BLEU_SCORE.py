@@ -158,13 +158,14 @@ def save_to_excel(data):
         "Comments",
         "Original Prediction",
         "Reduced Code",
+        "Reduced Code Tokens",
         "BLEU Score Comments to Prediction",
         "Cosine Score Comments to Reduced Code",
     ]
 
     try:
         # Load existing data if the file exists
-        df = pd.read_excel("metricsWithoutComments.xlsx")
+        df = pd.read_excel("metricsAfterRemovingComments.xlsx")
     except FileNotFoundError:
         # Create a new DataFrame if the file doesn't exist
         df = pd.DataFrame(columns=columns)
@@ -173,7 +174,7 @@ def save_to_excel(data):
     df = df._append(pd.DataFrame([data], columns=columns), ignore_index=True)
 
     # Save the updated DataFrame to Excel
-    df.to_excel("metricsWithoutComments.xlsx", index=False)
+    df.to_excel("metricsAfterRemovingComments.xlsx", index=False)
 
 
 if __name__ == "__main__":
@@ -189,7 +190,7 @@ if __name__ == "__main__":
             # Iterate over each line in the file
             line = file.readline()
             for line in file:
-                if i >= 774:
+                if i <= 1000:
                     print(
                         "======================Function execution i = ",
                         i,
@@ -198,7 +199,7 @@ if __name__ == "__main__":
                     # Parse the JSON data in each line
                     data = json.loads(line)
                     # Extract the code from the desired
-                    code = data["code"]
+                    code = remove_comments(data["code"])
                     summary = data["docstring"]
                     # get method_name and method_body
                     method_name = summary
@@ -224,6 +225,7 @@ if __name__ == "__main__":
                         summary,
                         predict,
                         program,
+                        reduced_tokens,
                         calculate_BLEU_score_strings(summary, predict),
                         calculate_cosine_similarity(summary, reduced_tokens),
                     ]

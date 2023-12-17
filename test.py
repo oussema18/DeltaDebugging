@@ -1,46 +1,16 @@
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
-import nltk
+import pandas as pd
+import ast
 
+# Read the Excel file
+data = pd.read_excel("metricsAfterRemovingComments.xlsx")
 
-def calculate_cosine_similarity(reference, candidate):
-    # Tokenize the texts
-    tokenizer = nltk.word_tokenize
-    reference_tokens = tokenizer(reference.lower())
-    candidate_tokens = tokenizer(candidate.lower())
+# Display the contents
 
-    # Join the token lists back into strings for CountVectorizer
-    reference_str = " ".join(reference_tokens)
-    candidate_str = " ".join(candidate_tokens)
+input_string = "[(6, 'to'), (7, '_'), (8, 'url'), (10, 'list'), (11, '('), (18, ' '), (19, ' '), (20, ' '), (21, ' '), (22, '\"'), (23, '\"'), (24, '\"'), (26, '-'), (27, '>'), (28, 'list'), (29, '\\n'), (34, 'Convert'), (36, 'XML'), (37, ' '), (40, 'URL'), (41, ' '), (42, 'List'), (43, '.'), (45, ' '), (46, ' '), (47, ' '), (48, ' '), (49, 'From'), (55, ' '), (56, ' '), (100, 'getElementsByTagName'), (101, '('), (107, '\\n'), (108, ' '), (109, ' '), (110, ' '), (111, ' '), (112, ' '), (113, ' '), (114, ' '), (117, ' '), (126, \"'\"), (140, 'rawurl'), (143, '('), (144, 'url')]"
+# Removing newline characters for better readability
+input_string = input_string.replace("\\n", "")
 
-    # Create CountVectorizer and fit the reference and candidate texts
-    vectorizer = CountVectorizer().fit([reference_str, candidate_str])
+# Use ast.literal_eval to safely evaluate the string as a Python literal
+output_list = ast.literal_eval(input_string)
 
-    # Transform the texts to their vector representations
-    reference_vector = vectorizer.transform([reference_str])
-    candidate_vector = vectorizer.transform([candidate_str])
-
-    # Compute cosine similarity between the vectors
-    similarity_score = cosine_similarity(reference_vector, candidate_vector)[0, 0]
-    return similarity_score
-
-
-def calculate_BLEU_score_strings(reference, candidate):
-    # Tokenizing the sentences
-    reference_tokens = nltk.word_tokenize(reference.lower())
-    candidate_tokens = nltk.word_tokenize(candidate.lower())
-
-    # Computing BLEU score with smoothing
-    bleu_score = nltk.translate.bleu_score.sentence_bleu(
-        [reference_tokens],
-        candidate_tokens,
-        smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1,
-    )
-    return bleu_score
-
-
-reference = """get _ vid _ from _ url"""
-candidate = """ vid from _ url ( url )
-    com / embed / ' )"""
-print(calculate_cosine_similarity(reference, candidate))
-print(calculate_BLEU_score_strings(reference, candidate))
+print(output_list[0])
