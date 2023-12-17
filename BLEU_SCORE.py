@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import tensorflow as tf
+from treeSitter import modify_function_name
 
 nltk.download("punkt")
 ###############################################################
@@ -152,7 +153,7 @@ def calculate_BLEU_score_strings(reference, candidate):
     return bleu_score
 
 
-def save_to_excel(data):
+def save_to_excel(data, filename):
     columns = [
         "Original Code",
         "Comments",
@@ -165,7 +166,7 @@ def save_to_excel(data):
 
     try:
         # Load existing data if the file exists
-        df = pd.read_excel("metricsAfterRemovingComments.xlsx")
+        df = pd.read_excel(filename)
     except FileNotFoundError:
         # Create a new DataFrame if the file doesn't exist
         df = pd.DataFrame(columns=columns)
@@ -174,7 +175,7 @@ def save_to_excel(data):
     df = df._append(pd.DataFrame([data], columns=columns), ignore_index=True)
 
     # Save the updated DataFrame to Excel
-    df.to_excel("metricsAfterRemovingComments.xlsx", index=False)
+    df.to_excel(filename, index=False)
 
 
 if __name__ == "__main__":
@@ -184,8 +185,6 @@ if __name__ == "__main__":
         # Read the JSONL file
         jsonl_file_path = "python_test_0.jsonl"
         i = 0
-        remaining_tokens = {}
-        deleted_tokens = {}
         with open(jsonl_file_path, "r") as file:
             for line in file:
                 if i <= 1000:
@@ -229,7 +228,75 @@ if __name__ == "__main__":
                     ]
 
                     # Save the data to Excel
-                    save_to_excel(data)
+                    save_to_excel(data, "metricsAfterRemovingComments.xlsx")
+                    print("-----------------------------------------------------------")
+                    print("====================== ORIGINAL CODE ======================")
+                    print(method_body)
+                    print()
+                    print("=================== ORIGINAL DOCSTRING ===================")
+                    print(summary)
+                    print("=================== ORIGINAL PREDICTION ===================")
+                    print(predict)
+                    print()
+                    print("====================== REDUCED CODE =======================")
+                    print("\033[30;103m", program, "\033[0m")
+                    print("======================= BLUE SCORE ========================")
+                    print(
+                        "BLEU between Commments and Reduced code : ",
+                        calculate_BLEU_score_strings(summary, predict),
+                    )
+                    print(
+                        "Cosine between Prediction and Comments :",
+                        calculate_cosine_similarity(summary, reduced_tokens),
+                    )
+                    print("-----------------------------------------------------------")
+                    # print("Removing any element will make the prediction go away.")
+                    g_all_data.append("\nMinimal simplified code:\n{}".format(program))
+            i = i + 1
+        with open(jsonl_file_path, "r") as file:
+            for line in file:
+                if i <= 1000:
+                    print(
+                        "======================Function execution i = ",
+                        i,
+                        "======================",
+                    )
+                    # Parse the JSON data in each line
+                    data = json.loads(line)
+                    # Extract the code from the desired
+                    code = modify_function_name(remove_comments(data["code"]), "funct1")
+                    summary = data["docstring"]
+                    # get method_name and method_body
+                    method_name = summary
+                    method_body = code
+                    g_cnt_dict[method_name] = g_cnt_dict.get(method_name, 0) + 1
+                    # check predicted method_name
+                    g_original_method_name = method_name
+                    predict, score, loss = hp.prediction_with_M(g_model, method_body)
+                    g_predicted_method_name = predict
+                    # create deltas by char/token
+                    deltas = []
+                    if hp.g_deltas_type == "token":
+                        deltas = hp.get_token_deltas(method_body)
+                    else:
+                        deltas = hp.get_char_deltas(method_body)
+                    mydd = MyDD()
+
+                    reduced_tokens = mydd.ddmin(deltas)
+
+                    program = hp.deltas_to_code(reduced_tokens)
+                    data = [
+                        method_body,
+                        summary,
+                        predict,
+                        program,
+                        reduced_tokens,
+                        calculate_BLEU_score_strings(summary, predict),
+                        calculate_cosine_similarity(summary, reduced_tokens),
+                    ]
+
+                    # Save the data to Excel
+                    save_to_excel(data, "metricsAfterRemovingFN.xlsx")
                     print("-----------------------------------------------------------")
                     print("====================== ORIGINAL CODE ======================")
                     print(method_body)
