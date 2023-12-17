@@ -187,8 +187,6 @@ if __name__ == "__main__":
         remaining_tokens = {}
         deleted_tokens = {}
         with open(jsonl_file_path, "r") as file:
-            # Iterate over each line in the file
-            line = file.readline()
             for line in file:
                 if i <= 1000:
                     print(
@@ -255,4 +253,4 @@ if __name__ == "__main__":
                     print("-----------------------------------------------------------")
                     # print("Removing any element will make the prediction go away.")
                     g_all_data.append("\nMinimal simplified code:\n{}".format(program))
-                i = i + 1
+            i = i + 1
