@@ -1,16 +1,41 @@
 import pandas as pd
 import ast
+from BLEU_SCORE import calculate_cosine_similarity
+from helper import get_token_deltas
+from treeSitter import extract_variables_names, get_function_name
+import nltk
+
+
+def deltas_to_code(d):
+    return " ".join([c[1] for c in d])
+
 
 # Read the Excel file
-data = pd.read_excel("metricsAfterRemovingComments.xlsx")
+data = pd.read_excel("C:/Users/oussama/Downloads/metricsAfterRemovingFN(1).xlsx")
+new_column_values = [0] * len(data)
+for i in range(987, len(data)):
+    # Display the contents
+    reduced_tokens = ast.literal_eval(data["Reduced Code Tokens"][i])
+    summary = data["Comments"][i]
+    code = data["Original Code"][i]
+    variables_names = get_function_name(code)
+    new_column_values[i] = calculate_cosine_similarity(
+        deltas_to_code(get_token_deltas(variables_names)), reduced_tokens
+    )
 
-# Display the contents
 
-input_string = "[(6, 'to'), (7, '_'), (8, 'url'), (10, 'list'), (11, '('), (18, ' '), (19, ' '), (20, ' '), (21, ' '), (22, '\"'), (23, '\"'), (24, '\"'), (26, '-'), (27, '>'), (28, 'list'), (29, '\\n'), (34, 'Convert'), (36, 'XML'), (37, ' '), (40, 'URL'), (41, ' '), (42, 'List'), (43, '.'), (45, ' '), (46, ' '), (47, ' '), (48, ' '), (49, 'From'), (55, ' '), (56, ' '), (100, 'getElementsByTagName'), (101, '('), (107, '\\n'), (108, ' '), (109, ' '), (110, ' '), (111, ' '), (112, ' '), (113, ' '), (114, ' '), (117, ' '), (126, \"'\"), (140, 'rawurl'), (143, '('), (144, 'url')]"
-# Removing newline characters for better readability
-input_string = input_string.replace("\\n", "")
+df = pd.read_excel("C:/Users/oussama/Downloads/metricsAfterRemovingFN(1).xlsx")
 
-# Use ast.literal_eval to safely evaluate the string as a Python literal
-output_list = ast.literal_eval(input_string)
+df["Cosine to Function Name"] = new_column_values
 
-print(output_list[0])
+# Write the updated DataFrame back to the Excel file
+with pd.ExcelWriter(
+    "C:/Users/oussama/Downloads/metricsAfterRemovingFN(1).xlsx",
+    engine="openpyxl",
+    mode="a",
+) as writer:  # Use 'openpyxl' engine to append
+    df.to_excel(
+        writer, index=False, sheet_name="Sheet4"
+    )  # Replace 'Sheet1' with your sheet name
+
+print("Column added and values written to Excel file.")

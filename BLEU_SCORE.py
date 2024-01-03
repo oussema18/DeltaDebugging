@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import tensorflow as tf
-from treeSitter import modify_function_name
+from treeSitter import extract_variables_names, modify_function_name
 
 nltk.download("punkt")
 ###############################################################
@@ -102,6 +102,10 @@ def format_tokens(tokens):
     return merged
 
 
+def deltas_to_code(d):
+    return " ".join([c[1] for c in d])
+
+
 def calculate_cosine_similarity(reference, candidate):
     # Tokenize the texts
     tokenizer = nltk.word_tokenize
@@ -162,6 +166,8 @@ def save_to_excel(data, filename):
         "Reduced Code Tokens",
         "BLEU Score Comments to Prediction",
         "Cosine Score Comments to Reduced Code",
+        "Cosine Score Function Name to Reduced Code",
+        "Cosine Score Variables Name to Reduced Code",
     ]
 
     try:
@@ -187,7 +193,7 @@ if __name__ == "__main__":
         i = 0
         with open(jsonl_file_path, "r") as file:
             for line in file:
-                if i <= 1000 and i >= 985:
+                if i <= 1000:
                     print(
                         "======================Function execution i = ",
                         i,
@@ -196,7 +202,7 @@ if __name__ == "__main__":
                     # Parse the JSON data in each line
                     data = json.loads(line)
                     # Extract the code from the desired
-                    code = modify_function_name(remove_comments(data["code"]), "funct1")
+                    code = data["code"]
                     summary = data["docstring"]
                     # get method_name and method_body
                     method_name = summary
@@ -225,10 +231,16 @@ if __name__ == "__main__":
                         reduced_tokens,
                         calculate_BLEU_score_strings(summary, predict),
                         calculate_cosine_similarity(summary, reduced_tokens),
+                        calculate_cosine_similarity(
+                            deltas_to_code(hp.get_token_deltas(code)), reduced_tokens
+                        ),
+                        calculate_cosine_similarity(
+                            extract_variables_names(code), reduced_tokens
+                        ),
                     ]
 
                     # Save the data to Excel
-                    save_to_excel(data, "metricsAfterRemovingFN.xlsx")
+                    save_to_excel(data, "InitalTrial.xlsx")
                     print("-----------------------------------------------------------")
                     print("====================== ORIGINAL CODE ======================")
                     print(method_body)
