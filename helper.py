@@ -1,15 +1,19 @@
+import re
 import pandas as pd
 import subprocess
 import javalang
 from datetime import datetime
 import json
-import numpy as np
-import tensorflow as tf
+import nltk
+from rouge_score import rouge_scorer
+
 from argparse import ArgumentParser
 from dd_model import Model
 from config import Config
 from transformers import RobertaConfig, RobertaTokenizer, RobertaForMaskedLM, pipeline
-from transformers import RobertaTokenizer, T5ForConditionalGeneration
+from transformers import RobertaTokenizer, AutoModel, AutoTokenizer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 ###############################################################
 
@@ -20,8 +24,142 @@ JAR_LOAD_JAVA_METHOD = "others/LoadJavaMethod/target/jar/LoadJavaMethod.jar"
 # TODO - update file_path and delta_type
 g_test_file = "data/selected_file/mn_c2x/c2x_jl_test_correct_prediction_samefile.txt"
 g_deltas_type = g_deltas_types[0]
-
+checkpoint = "Salesforce/codet5p-220m-bimodal"
+device = "cpu"  # for GPU usage or "cpu" for CPU usage
 ###############################################################
+
+
+def remove_comments(input_string):
+    # Define a regular expression pattern to match comments between triple double-quotes
+    pattern = r'"""(.*?)"""'
+
+    # Use re.sub to replace the matched pattern with an empty string
+    cleaned_string = re.sub(pattern, "", input_string, flags=re.DOTALL)
+
+    return cleaned_string
+
+
+def count(c, remaining_tokens):
+    c_tokens = [token for _, token in c]
+    for token in c_tokens:
+        if token in remaining_tokens:
+            remaining_tokens[token] += 1
+        else:
+            remaining_tokens[token] = 1
+    # Sort tokens by their occurrences
+    sorted_tokens = sorted(remaining_tokens.items(), key=lambda x: x[1], reverse=True)
+
+    # Print the output as a table
+    print("| Token                 | Occurrence |")
+    print("|-----------------------|------------|")
+    for token, occurrence in sorted_tokens:
+        if token == "\n":
+            token = "\\n"
+        print(f"| {token.ljust(20)} | {str(occurrence).ljust(10)} |")
+    return remaining_tokens
+
+
+def format_tokens(tokens):
+    # Group the elements by their positions
+    groups = {}
+    for pos, value in tokens:
+        groups.setdefault(pos, []).append(value)
+
+    # Merge consecutive elements
+    merged = []
+    for key in sorted(groups.keys()):
+        if groups[key] != [" "]:
+            merged.append("".join(groups[key]))
+    return merged
+
+
+def deltas_to_code1(d):
+    return " ".join([c[1] for c in d])
+
+
+def calculate_rouge_score(reference, candidate):
+    scorer = rouge_scorer.RougeScorer(["rougeL"], use_stemmer=True)
+    scores = scorer.score(reference, candidate)
+    return scores["rougeL"][2]
+
+
+def calculate_cosine_similarity(reference, candidate):
+    # Tokenize the texts
+    tokenizer = nltk.word_tokenize
+    reference_tokens = tokenizer(reference.lower())
+    candidate_tokens = format_tokens(candidate)
+
+    # Join the token lists back into strings for CountVectorizer
+    reference_str = " ".join(reference_tokens)
+    candidate_str = " ".join(candidate_tokens)
+
+    # Create CountVectorizer and fit the reference and candidate texts
+    vectorizer = CountVectorizer().fit([reference_str, candidate_str])
+
+    # Transform the texts to their vector representations
+    reference_vector = vectorizer.transform([reference_str])
+    candidate_vector = vectorizer.transform([candidate_str])
+
+    # Compute cosine similarity between the vectors
+    similarity_score = cosine_similarity(reference_vector, candidate_vector)[0, 0]
+    return similarity_score
+
+
+def calculate_BLEU_score(comment, pred_tokens):
+    # Sample reference and candidate sentences
+    reference_tokens = nltk.word_tokenize(comment)
+    candidate_tokens = format_tokens(pred_tokens)
+    print("reference tokens : ", reference_tokens)
+    print("candidate tokens : ", candidate_tokens)
+    # Computing BLEU score with smoothing
+    bleu_score = nltk.translate.bleu_score.sentence_bleu(
+        [reference_tokens],
+        candidate_tokens,
+        smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1,
+    )
+    return bleu_score
+
+
+def calculate_BLEU_score_strings(reference, candidate):
+    # Tokenizing the sentences
+    reference_tokens = nltk.word_tokenize(reference.lower())
+    candidate_tokens = nltk.word_tokenize(candidate.lower())
+
+    # Computing BLEU score with smoothing
+    bleu_score = nltk.translate.bleu_score.sentence_bleu(
+        [reference_tokens],
+        candidate_tokens,
+        smoothing_function=nltk.translate.bleu_score.SmoothingFunction().method1,
+    )
+    return bleu_score
+
+
+def save_to_excel(data, filename):
+    columns = [
+        "Original Code",
+        "Comments",
+        "Original Prediction",
+        "Reduced Code",
+        "Reduced Code Tokens",
+        "BLEU Score Comments to Prediction",
+        "Cosine Score Comments to Reduced Code",
+        "Cosine Score Function Name to Reduced Code",
+        "Cosine Score Variables Name to Reduced Code",
+        "ROUGER Score",
+    ]
+
+    try:
+        # Load existing data if the file exists
+        df = pd.read_excel(filename)
+    except FileNotFoundError:
+        # Create a new DataFrame if the file doesn't exist
+        df = pd.DataFrame(columns=columns)
+
+    # Append new data to the DataFrame
+    df = df._append(pd.DataFrame([data], columns=columns), ignore_index=True)
+
+    # Save the updated DataFrame to Excel
+    df.to_excel(filename, index=False)
 
 
 def get_file_list():
@@ -82,16 +220,13 @@ def get_json_data(time, score, loss, code, tokens=None, n_pass=None):
 
 
 def load_model_M(model_path=""):
-    model = T5ForConditionalGeneration.from_pretrained(
-        "Salesforce/codet5-base-multi-sum"
-    )
-    return model
+    return AutoModel.from_pretrained(checkpoint, trust_remote_code=True).to(device)
 
 
 def prediction_with_M(model, code):
     pred, score, loss = None, 0, 0
-    tokenizer = RobertaTokenizer.from_pretrained("Salesforce/codet5-base")
-    input_ids = tokenizer(code, return_tensors="pt").input_ids
+    tokenizer = AutoTokenizer.from_pretrained(checkpoint, trust_remote_code=True)
+    input_ids = tokenizer(code, return_tensors="pt").input_ids.to(device)
     generated_ids = model.generate(input_ids, max_length=20)
     pred = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
     return pred, score, loss
