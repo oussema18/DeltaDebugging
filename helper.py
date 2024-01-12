@@ -25,7 +25,7 @@ JAR_LOAD_JAVA_METHOD = "others/LoadJavaMethod/target/jar/LoadJavaMethod.jar"
 g_test_file = "data/selected_file/mn_c2x/c2x_jl_test_correct_prediction_samefile.txt"
 g_deltas_type = g_deltas_types[0]
 checkpoint = "Salesforce/codet5p-220m-bimodal"
-device = "cpu"  # for GPU usage or "cpu" for CPU usage
+device = "cuda"  # for GPU usage or "cpu" for CPU usage
 ###############################################################
 
 
