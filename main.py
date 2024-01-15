@@ -68,7 +68,7 @@ if __name__ == "__main__":
                     # Parse the JSON data in each line
                     data = json.loads(line)
                     # Extract the code from the desired
-                    code = data["code"]
+                    code = hp.remove_comments(data["code"])
                     summary = data["docstring"]
                     # get method_name and method_body
                     method_name = summary
@@ -110,7 +110,7 @@ if __name__ == "__main__":
                     ]
 
                     # Save the data to Excel
-                    hp.save_to_excel(data, "codeT5+.xlsx")
+                    hp.save_to_excel(data, "codeT5+_Without_Comments.xlsx")
                     print("-----------------------------------------------------------")
                     print("====================== ORIGINAL CODE ======================")
                     print(method_body)
