@@ -68,7 +68,9 @@ if __name__ == "__main__":
                     # Parse the JSON data in each line
                     data = json.loads(line)
                     # Extract the code from the desired
-                    code = hp.remove_comments(data["code"])
+                    code = modify_function_name(
+                        hp.remove_comments(data["code"]), "funct1"
+                    )
                     summary = data["docstring"]
                     # get method_name and method_body
                     method_name = summary
