@@ -112,7 +112,7 @@ if __name__ == "__main__":
                     ]
 
                     # Save the data to Excel
-                    hp.save_to_excel(data, "codeT5+_Without_Comments.xlsx")
+                    hp.save_to_excel(data, "codeT5+_Without_FN.xlsx")
                     print("-----------------------------------------------------------")
                     print("====================== ORIGINAL CODE ======================")
                     print(method_body)
