@@ -10,15 +10,20 @@ def modify_function_name(code, new_function_name):
     parser = get_parser("python")
     tree = parser.parse(bytes(code, "utf8"))
     node = tree.root_node.children[0]
+
     if node.type == "function_definition":
         function_name_node = node.children[1]
         function_name = code[
             function_name_node.start_byte : function_name_node.end_byte
         ]
+
         # Modify the function name
-        new_function_name = function_name.replace(function_name, "func1")
-        # Replace the function name in the code
-        modified_code = code.replace(function_name, new_function_name)
+        modified_code = (
+            code[: function_name_node.start_byte]
+            + new_function_name
+            + code[function_name_node.end_byte :]
+        )
+
         return modified_code
 
 
