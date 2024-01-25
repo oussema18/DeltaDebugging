@@ -246,12 +246,10 @@ def prediction_with_M(model, code):
     tokenizer = PLBartTokenizer.from_pretrained(
         "uclanlp/plbart-python-en_XX", src_lang="python", tgt_lang="en_XX"
     )
-    inputs = tokenizer(replace_line_breaks(code), return_tensors="pt")
+    inputs = tokenizer(replace_line_breaks(code), return_tensors="pt").to(device)
     translated_tokens = model.generate(
         **inputs, decoder_start_token_id=tokenizer.lang_code_to_id["__en_XX__"]
-    )
-    input_ids = tokenizer(code, return_tensors="pt").input_ids.to(device)
-    generated_ids = model.generate(input_ids, max_length=20)
+    ).to(device)
     pred = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
     return pred, score, loss
 
