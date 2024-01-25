@@ -14,6 +14,7 @@ from transformers import RobertaConfig, RobertaTokenizer, RobertaForMaskedLM, pi
 from transformers import RobertaTokenizer, AutoModel, AutoTokenizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from transformers import PLBartForConditionalGeneration, PLBartTokenizer
 
 ###############################################################
 
@@ -24,9 +25,19 @@ JAR_LOAD_JAVA_METHOD = "others/LoadJavaMethod/target/jar/LoadJavaMethod.jar"
 # TODO - update file_path and delta_type
 g_test_file = "data/selected_file/mn_c2x/c2x_jl_test_correct_prediction_samefile.txt"
 g_deltas_type = g_deltas_types[0]
-checkpoint = "Salesforce/codet5p-220m-bimodal"
 device = "cuda"  # for GPU usage or "cpu" for CPU usage
 ###############################################################
+
+
+def replace_line_breaks(code):
+    # Replace line breaks with "NEW_LINE_INDENT"
+    code_with_new_line_indent = code.replace("\n", "NEW_LINE_INDENT")
+
+    # Handle the indentation for the first line
+    if code_with_new_line_indent.startswith("NEW_LINE_INDENT"):
+        code_with_new_line_indent = code_with_new_line_indent[len("NEW_LINE_INDENT") :]
+
+    return code_with_new_line_indent
 
 
 def remove_comments(input_string):
@@ -186,9 +197,14 @@ def get_token_deltas(program):
     token, tokens = "", []
     for c in program:
         if not c.isalpha():
-            tokens.append(token)
-            tokens.append(c)
-            token = ""
+            if not (
+                (token == "NEW" and c == "_") or (token == "NEW_LINE" and c == "_")
+            ):
+                tokens.append(token)
+                tokens.append(c)
+                token = ""
+            else:
+                token = token + c
         else:
             token = token + c
     tokens.append(token)
@@ -220,15 +236,23 @@ def get_json_data(time, score, loss, code, tokens=None, n_pass=None):
 
 
 def load_model_M(model_path=""):
-    return AutoModel.from_pretrained(checkpoint, trust_remote_code=True).to(device)
+    return PLBartForConditionalGeneration.from_pretrained(
+        "uclanlp/plbart-python-en_XX"
+    ).to(device)
 
 
 def prediction_with_M(model, code):
     pred, score, loss = None, 0, 0
-    tokenizer = AutoTokenizer.from_pretrained(checkpoint, trust_remote_code=True)
+    tokenizer = PLBartTokenizer.from_pretrained(
+        "uclanlp/plbart-python-en_XX", src_lang="python", tgt_lang="en_XX"
+    )
+    inputs = tokenizer(replace_line_breaks(code), return_tensors="pt")
+    translated_tokens = model.generate(
+        **inputs, decoder_start_token_id=tokenizer.lang_code_to_id["__en_XX__"]
+    )
     input_ids = tokenizer(code, return_tensors="pt").input_ids.to(device)
     generated_ids = model.generate(input_ids, max_length=20)
-    pred = tokenizer.decode(generated_ids[0], skip_special_tokens=True)
+    pred = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
     return pred, score, loss
 
 

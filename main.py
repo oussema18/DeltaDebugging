@@ -59,7 +59,7 @@ if __name__ == "__main__":
         i = 0
         with open(jsonl_file_path, "r") as file:
             for line in file:
-                if i >= 18 and i < 1000:
+                if i < 1000:
                     print(
                         "======================Function execution i = ",
                         i,
@@ -68,9 +68,7 @@ if __name__ == "__main__":
                     # Parse the JSON data in each line
                     data = json.loads(line)
                     # Extract the code from the desired
-                    code = modify_function_name(
-                        hp.remove_comments(data["code"]), "funct1"
-                    )
+                    code = hp.replace_line_breaks(data["code"])
                     summary = data["docstring"]
                     # get method_name and method_body
                     method_name = summary
@@ -112,7 +110,7 @@ if __name__ == "__main__":
                     ]
 
                     # Save the data to Excel
-                    hp.save_to_excel(data, "codeT5+_Without_FN.xlsx")
+                    hp.save_to_excel(data, "PLBART_initial.xlsx")
                     print("-----------------------------------------------------------")
                     print("====================== ORIGINAL CODE ======================")
                     print(method_body)
