@@ -59,7 +59,7 @@ if __name__ == "__main__":
         i = 0
         with open(jsonl_file_path, "r") as file:
             for line in file:
-                if i < 1000:
+                if i >= 4 and i < 1000:
                     print(
                         "======================Function execution i = ",
                         i,
@@ -68,11 +68,11 @@ if __name__ == "__main__":
                     # Parse the JSON data in each line
                     data = json.loads(line)
                     # Extract the code from the desired
-                    code = hp.replace_line_breaks(data["code"])
+                    code = data["code"]
                     summary = data["docstring"]
                     # get method_name and method_body
                     method_name = summary
-                    method_body = code
+                    method_body = hp.replace_line_breaks(code)
                     g_cnt_dict[method_name] = g_cnt_dict.get(method_name, 0) + 1
                     # check predicted method_name
                     g_original_method_name = method_name

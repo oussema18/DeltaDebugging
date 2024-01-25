@@ -31,7 +31,7 @@ device = "cuda"  # for GPU usage or "cpu" for CPU usage
 
 def replace_line_breaks(code):
     # Replace line breaks with "NEW_LINE_INDENT"
-    code_with_new_line_indent = code.replace("\n", "NEW_LINE_INDENT")
+    code_with_new_line_indent = code.replace("\n", " NEW_LINE_INDENT ")
 
     # Handle the indentation for the first line
     if code_with_new_line_indent.startswith("NEW_LINE_INDENT"):
