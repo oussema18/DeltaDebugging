@@ -59,7 +59,7 @@ if __name__ == "__main__":
         i = 0
         with open(jsonl_file_path, "r") as file:
             for line in file:
-                if i >= 33 and i < 1000:
+                if i >= 34 and i < 1000:
                     print(
                         "======================Function execution i = ",
                         i,
