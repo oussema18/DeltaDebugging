@@ -56,10 +56,10 @@ if __name__ == "__main__":
         assert g_model is not None
         # Read the JSONL file
         jsonl_file_path = "python_test_0.jsonl"
-        i = 0
+        i = 1
         with open(jsonl_file_path, "r") as file:
             for line in file:
-                if i >= 34 and i < 1000:
+                if i >= 703 and i < 1000:
                     print(
                         "======================Function execution i = ",
                         i,
