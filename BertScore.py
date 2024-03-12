@@ -12,4 +12,27 @@ decoder_input_ids = tokenizer(
 outputs = model(
     input_ids=input_ids, decoder_input_ids=decoder_input_ids, output_attentions=True
 )
-print(outputs.encoder_attentions)
+attentions = outputs.encoder_attentions
+last_layer_attentions = attentions[
+    -1
+]  # (1, num_heads, sequence_length, sequence_length)
+
+# To get a single attention score per token, average across the attention heads
+attention_scores = last_layer_attentions.mean(dim=1).squeeze(0)
+
+# Now let's sort the tokens by their attention score and take the top N.
+# Note that the scores are a matrix of (sequence_length, sequence_length)
+# We are interested in the attention each token gives to the [CLS] token (or equivalent in T5)
+cls_attentions = attention_scores[:, 0]
+
+# Sort the tokens by attention score in descending order and take the indices
+top_attention_indices = cls_attentions.argsort(descending=True)
+
+# Decode the top tokens
+top_tokens = tokenizer.convert_ids_to_tokens(input_ids.squeeze().tolist())
+
+# Take the top N tokens
+N = 10  # or the size of your reduced token set
+top_N_tokens = [top_tokens[i] for i in top_attention_indices[:N]]
+
+print(top_N_tokens)
