@@ -32,7 +32,7 @@ top_attention_indices = cls_attentions.argsort(descending=True)
 top_tokens = tokenizer.convert_ids_to_tokens(input_ids.squeeze().tolist())
 
 # Take the top N tokens
-N = 10  # or the size of your reduced token set
+N = 20  # or the size of your reduced token set
 top_N_tokens = [top_tokens[i] for i in top_attention_indices[:N]]
 
 print(top_N_tokens)
